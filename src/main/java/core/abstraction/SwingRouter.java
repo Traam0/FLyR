@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Logger;
 
-public abstract class SwingRouter implements Router {
+public class SwingRouter implements Router {
     private final JFrame window;
     private final AuthContext context;
     private final ServiceProvider serviceProvider;

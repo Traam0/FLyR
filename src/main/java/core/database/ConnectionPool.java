@@ -10,7 +10,6 @@ import java.util.List;
 public final class ConnectionPool {
     private final int MAX_CAPACITY;
     private final String connectionString;
-
     private final List<Connection> pool;
     private final List<Connection> usedConnections;
 
