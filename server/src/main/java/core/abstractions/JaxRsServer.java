@@ -1,24 +1,19 @@
-package core.abstraction;
+package core.abstractions;
 
+import core.database.ConnectionPool;
 import core.dependencyInjection.ServiceCollection;
 import core.dependencyInjection.ServiceProvider;
-import core.mvvm.View;
-import core.navigation.Router;
-import core.security.AuthContext;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Abstract base class for Swing applications.
- * Handles DI setup, application lifecycle, and coordination with SwingRouter.
- */
-public abstract class SwingApp {
-
-    private static ServiceProvider serviceProvider;
-    private Router router;
+public abstract class JaxRsServer {
+    private ServiceProvider serviceProvider;
     private Logger logger;
 
     /**
@@ -31,7 +26,7 @@ public abstract class SwingApp {
      * Start the application with initial navigation.
      * Override to set the initial view.
      */
-    protected abstract void startApplication();
+    protected abstract void startApplication() throws IOException;
 
 
     /**
@@ -43,8 +38,6 @@ public abstract class SwingApp {
             // Initialize logging
             initializeLogging();
             serviceProvider = buildServiceProvider();
-            this.router = serviceProvider.getRequiredService(Router.class);
-            this.configureWindow();
             this.startApplication();
             logger.info("Application started successfully");
         } catch (Exception e) {
@@ -71,24 +64,22 @@ public abstract class SwingApp {
      */
     private void registerCoreServices(ServiceCollection services) {
         services.registerSingleton(Logger.class, this.getLogger());
-        services.registerSingleton(AuthContext.class, AuthContext.class);
-        services.registerSingleton(Router.class, (Function<ServiceProvider, Router>) sp -> {
-            return new SwingRouter(this.getLogger(), sp) {
-            };
+        services.registerSingleton(Properties.class, (Function<ServiceProvider, Properties>) sp -> {
+            Properties properties = new Properties();
+            try {
+                properties.load(this.getClass().getClassLoader().getResourceAsStream("application.properties"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return properties;
         });
-    }
-
-    /**
-     * Configure window properties (title, size, etc.)
-     * Override to customize window settings.
-     */
-    protected void configureWindow() {
-        if (router instanceof SwingRouter swingRouter) {
-            JFrame window = swingRouter.getWindow();
-            window.setTitle("My Swing Application");
-            window.setSize(800, 600);
-            window.setLocationRelativeTo(null);
-        }
+        services.registerSingleton(ConnectionPool.class, (Function<ServiceProvider, ConnectionPool>) sp -> {
+            try {
+                return new ConnectionPool(15, sp.getRequiredService(Properties.class).getProperty("db.connectionString"));
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     /**
@@ -121,31 +112,14 @@ public abstract class SwingApp {
         } else {
             e.printStackTrace();
         }
-
-        SwingUtilities.invokeLater(() -> {
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Failed to start application: " + e.getMessage(),
-                    "Startup Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        });
-
         System.exit(1);
     }
 
     /**
      * Get the service provider.
      */
-    public static ServiceProvider getServiceProvider() {
+    public ServiceProvider getServiceProvider() {
         return serviceProvider;
-    }
-
-    /**
-     * Get the router.
-     */
-    public Router getRouter() {
-        return router;
     }
 
     /**
@@ -153,17 +127,6 @@ public abstract class SwingApp {
      */
     public Logger getLogger() {
         return logger;
-    }
-
-
-    /**
-     * Show the main window.
-     */
-    protected void showWindow(Class<? extends View> initialView) {
-        if (router instanceof SwingRouter r) {
-            r.getWindow().setVisible(true);
-            r.navigateTo(initialView);
-        }
     }
 
     /**

@@ -7,7 +7,7 @@ import javax.swing.*;
 
 public abstract class ViewBase extends JPanel implements View {
     public ViewBase() {
-        this.initComponents();
-        this.bind();
+//        this.initComponents();
+//        this.bind();
     }
 }

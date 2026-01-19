@@ -52,6 +52,8 @@ public class FlightSearchView extends ViewBase {
         this.router = router;
         this.logger = logger;
         this.initComponents();
+        this.bind();
+
     }
 
     @Override
@@ -204,7 +206,7 @@ public class FlightSearchView extends ViewBase {
         loadingLabel = new JLabel("Searching for flights...");
         loadingLabel.setForeground(MaterialColors.BLUE_600);
         loadingLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        loadingLabel.setVisible(true);
+        loadingLabel.setVisible(this.vm.isLoading.get());
 
         errorLabel = new JLabel();
         errorLabel.setForeground(MaterialColors.RED_600);
@@ -225,6 +227,13 @@ public class FlightSearchView extends ViewBase {
 
     @Override
     public void bind() {
+        logger.info("bindinf start");
+
+        this.vm.isLoading.subscribe((o, n) -> {
+            this.loadingLabel.setVisible((Boolean) n);
+            logger.info(String.valueOf(n));
+        });
+        logger.info("bindinf start");
         // Bind input fields to ViewModel properties
 //        bindInputFields();
 //

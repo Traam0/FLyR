@@ -12,6 +12,7 @@ import mvvm.viewModels.FlightSearchViewModel;
 import mvvm.views.LoginView;
 import mvvm.views.user.FlightSearchView;
 import services.AuthenticationService;
+import services.FlightsService;
 
 import javax.swing.*;
 import java.util.Objects;
@@ -27,8 +28,12 @@ public class Application extends SwingApp {
     @Override
     protected void registerServices(ServiceCollection services) {
         //better ur singleton Factory data.why = [Thread Safe, lightWeigh] data.whenScoped = [different request tokens]
-        services.registerSingleton(HttpRestClientFactory.class, (Function<ServiceProvider, HttpRestClientFactory>) sp -> new HttpRestClientFactory("http://localhost:8080/"));
+        services.registerSingleton(HttpRestClientFactory.class,
+                (Function<ServiceProvider, HttpRestClientFactory>) sp -> new HttpRestClientFactory("http://localhost:8085/"));
         services.registerScoped(AuthService.class, AuthenticationService.class);
+
+        //services
+        services.registerScoped(FlightsService.class, FlightsService.class);
 
         //ViewModels
         services.registerScoped(FlightSearchViewModel.class, FlightSearchViewModel.class);
