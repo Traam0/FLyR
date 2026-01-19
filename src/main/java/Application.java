@@ -1,10 +1,21 @@
 import core.abstraction.SwingApp;
 import core.abstraction.SwingRouter;
 import core.dependencyInjection.ServiceCollection;
+import core.dependencyInjection.ServiceProvider;
+import core.navigation.Router;
+import core.networking.HttpRestClient;
+import core.networking.HttpRestClientFactory;
+import core.networking.JerseyHttpRestClient;
 import core.security.AuthContext;
+import core.security.AuthService;
+import mvvm.viewModels.FlightSearchViewModel;
+import mvvm.views.LoginView;
+import mvvm.views.user.FlightSearchView;
+import services.AuthenticationService;
 
 import javax.swing.*;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class Application extends SwingApp {
     public static void main(String[] args) {
@@ -15,21 +26,24 @@ public class Application extends SwingApp {
 
     @Override
     protected void registerServices(ServiceCollection services) {
-        // Register security
-        services.registerSingleton(AuthContext.class, AuthContext.class);
+        //better ur singleton Factory data.why = [Thread Safe, lightWeigh] data.whenScoped = [different request tokens]
+        services.registerSingleton(HttpRestClientFactory.class, (Function<ServiceProvider, HttpRestClientFactory>) sp -> new HttpRestClientFactory("http://localhost:8080/"));
+        services.registerScoped(AuthService.class, AuthenticationService.class);
 
-        // Register services
+        //ViewModels
+        services.registerScoped(FlightSearchViewModel.class, FlightSearchViewModel.class);
 
-        // Register views (transient - new instance each time)
+        //Views
+        services.registerTransient(LoginView.class, LoginView.class);
+        services.registerTransient(FlightSearchView.class, FlightSearchView.class);
 
     }
 
     @Override
     protected void configureWindow() {
-        super.configureWindow(); // Call parent if you want default config
+        super.configureWindow();
 
-        // Custom window configuration
-        if (getRouter() instanceof SwingRouter router) {
+        if (this.getRouter() instanceof SwingRouter router) {
             JFrame window = router.getWindow();
 
             window.setTitle("FlyR");
@@ -47,5 +61,6 @@ public class Application extends SwingApp {
 
     @Override
     protected void startApplication() {
+        this.showWindow(FlightSearchView.class);
     }
 }

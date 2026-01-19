@@ -13,6 +13,11 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation 'org.glassfish.jersey.core:jersey-client:3.1.5'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'org.glassfish.jersey.media:jersey-media-json-jackson:3.1.5'
+
 }
 
 test {

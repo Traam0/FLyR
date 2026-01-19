@@ -47,7 +47,7 @@ public class SwingRouter implements Router {
         if (this.history.size() <= 1) return;
         this.history.pop();
         SwingUtilities.invokeLater(() -> {
-            this.window.setTitle("ChatR");
+            this.window.setTitle("FLyR");
             this.window.getContentPane().removeAll();
             this.window.getContentPane().add((Component) this.serviceProvider.getRequiredService(history.peek()));
             this.window.revalidate();
@@ -69,7 +69,8 @@ public class SwingRouter implements Router {
 
     private void push(Class<? extends View> view) {
         SwingUtilities.invokeLater(() -> {
-            this.window.setTitle("ChatR");
+            var viewName = view.getSimpleName();
+            this.window.setTitle(viewName.substring(0,  viewName.length() - "view".length()));
             this.window.getContentPane().removeAll();
             this.window.getContentPane().add((Component) this.serviceProvider.getRequiredService(view));
             this.window.revalidate();

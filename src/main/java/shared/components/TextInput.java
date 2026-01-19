@@ -1,5 +1,7 @@
 package shared.components;
 
+import shared.common.MaterialColors;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
@@ -7,8 +9,8 @@ import java.awt.event.FocusEvent;
 import java.awt.geom.RoundRectangle2D;
 
 public class TextInput extends JTextField {
-    private Color borderColor = new Color(200, 200, 200);
-    private Color focusColor = new Color(0, 120, 215);
+    private Color borderColor = MaterialColors.BLUE_400_ACCENT;
+    private Color focusColor = MaterialColors.BLUE_700_ACCENT;
     private int borderRadius = 8;
     private boolean isHovered = false;
 

@@ -1,8 +1,11 @@
 package core.abstraction;
 
 import core.mvvm.View;
+import shared.common.MaterialColors;
 
-public abstract class ViewBase implements View {
+import javax.swing.*;
+
+public abstract class ViewBase extends JPanel implements View {
     public ViewBase() {
         this.initComponents();
         this.bind();

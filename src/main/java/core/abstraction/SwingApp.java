@@ -4,6 +4,7 @@ import core.dependencyInjection.ServiceCollection;
 import core.dependencyInjection.ServiceProvider;
 import core.mvvm.View;
 import core.navigation.Router;
+import core.security.AuthContext;
 
 import javax.swing.*;
 import java.util.function.Function;
@@ -21,6 +22,19 @@ public abstract class SwingApp {
     private Logger logger;
 
     /**
+     * Register application-specific services.
+     * Override this method in your application.
+     */
+    protected abstract void registerServices(ServiceCollection services);
+
+    /**
+     * Start the application with initial navigation.
+     * Override to set the initial view.
+     */
+    protected abstract void startApplication();
+
+
+    /**
      * Main entry point to run the application.
      * Call this from your main method.
      */
@@ -28,21 +42,11 @@ public abstract class SwingApp {
         try {
             // Initialize logging
             initializeLogging();
-
-            // Build service container
             serviceProvider = buildServiceProvider();
-
-            // Get router
-            router = serviceProvider.getRequiredService(Router.class);
-
-            // Configure window settings
-            configureWindow();
-
-            // Start the application
-            startApplication();
-
+            this.router = serviceProvider.getRequiredService(Router.class);
+            this.configureWindow();
+            this.startApplication();
             logger.info("Application started successfully");
-
         } catch (Exception e) {
             handleStartupError(e);
         }
@@ -57,63 +61,41 @@ public abstract class SwingApp {
         // Register core services
         registerCoreServices(services);
 
-        // Register application-specific services
         registerServices(services);
 
-        return services.buildServiceProvider();
+        return services.createScope();
     }
 
     /**
      * Register core framework services (Router, Logger, etc.)
      */
     private void registerCoreServices(ServiceCollection services) {
-        // Register logger
-        services.registerSingleton(Logger.class, getLogger());
-
-        // Register router
+        services.registerSingleton(Logger.class, this.getLogger());
+        services.registerSingleton(AuthContext.class, AuthContext.class);
         services.registerSingleton(Router.class, (Function<ServiceProvider, Router>) sp -> {
-            return new SwingRouter(getLogger(), sp) {
+            return new SwingRouter(this.getLogger(), sp) {
             };
         });
     }
-
-    /**
-     * Register application-specific services.
-     * Override this method in your application.
-     */
-    protected abstract void registerServices(ServiceCollection services);
 
     /**
      * Configure window properties (title, size, etc.)
      * Override to customize window settings.
      */
     protected void configureWindow() {
-        if (router instanceof SwingRouter) {
-            SwingRouter swingRouter = (SwingRouter) router;
+        if (router instanceof SwingRouter swingRouter) {
             JFrame window = swingRouter.getWindow();
-
-            // Default configuration
             window.setTitle("My Swing Application");
             window.setSize(800, 600);
-            window.setLocationRelativeTo(null); // Center on screen
-
-            // You can add more window configuration here
-            // window.setIconImage(...);
-            // window.setExtendedState(...);
+            window.setLocationRelativeTo(null);
         }
     }
-
-    /**
-     * Start the application with initial navigation.
-     * Override to set the initial view.
-     */
-    protected abstract void startApplication();
 
     /**
      * Initialize logging configuration.
      */
     protected void initializeLogging() {
-        logger = Logger.getLogger(getClass().getName());
+        this.logger = Logger.getLogger(this.getClass().getName());
 
         // Set up uncaught exception handler
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
@@ -173,33 +155,14 @@ public abstract class SwingApp {
         return logger;
     }
 
-    /**
-     * Helper method to navigate to a view.
-     */
-    protected void navigateTo(Class<? extends View> view) {
-        router.navigateTo(view);
-    }
-
-    /**
-     * Helper method to navigate to a view with parameters.
-     */
-    protected void navigateTo(Class<? extends View> view, java.util.Map<String, Object> params) {
-        router.navigateTo(view, params);
-    }
-
-    /**
-     * Helper method to go back.
-     */
-    protected void goBack() {
-        router.goBack();
-    }
 
     /**
      * Show the main window.
      */
-    protected void showWindow() {
-        if (router instanceof SwingRouter) {
-            ((SwingRouter) router).getWindow().setVisible(true);
+    protected void showWindow(Class<? extends View> initialView) {
+        if (router instanceof SwingRouter r) {
+            r.getWindow().setVisible(true);
+            r.navigateTo(initialView);
         }
     }
 
