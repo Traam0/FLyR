@@ -1,6 +1,7 @@
 package services;
 
 import contracts.FlightData;
+import contracts.requests.FlightSearchFilter;
 import contracts.wrappers.Resource;
 import core.networking.HttpRestClient;
 import core.networking.HttpRestClientFactory;
@@ -19,9 +20,21 @@ public class FlightsService {
 
     public Resource<FlightData[]> getFlights() {
         try {
-            var flights = this.httpClient.getWithApiResponse("/flights", FlightData[].class);
-            if (flights.isSuccess()) return Resource.success(flights.getData());
-            return Resource.error(flights.getMessage());
+            var response = this.httpClient.getWithApiResponse("/flights", FlightData[].class);
+            if (response.isSuccess()) return Resource.success(response.getData());
+            return Resource.error(response.getMessage());
+        } catch (Exception e) {
+            this.logger.severe(e.getMessage());
+            return Resource.error(e.getMessage());
+        }
+    }
+
+    public Resource<FlightData[]> filterFlights(FlightSearchFilter filter) {
+        try {
+            var response = this.httpClient.getWithApiResponse(String.format("/flights/search?%s", filter), FlightData[].class);
+            logger.info(String.format("/flights/search?%s", filter));
+            if (response.isSuccess()) return Resource.success(response.getData());
+            return Resource.error(response.getMessage());
         } catch (Exception e) {
             this.logger.severe(e.getMessage());
             return Resource.error(e.getMessage());

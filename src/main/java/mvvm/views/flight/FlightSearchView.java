@@ -1,6 +1,10 @@
-package mvvm.views.user;
+package mvvm.views.flight;
 
+import contracts.FlightData;
+import contracts.wrappers.Resource;
 import core.abstraction.ViewBase;
+import mvvm.views.LoginView;
+import shared.common.MScrollBar;
 import shared.common.MaterialColors;
 import core.navigation.Router;
 import shared.layouts.FlexPanelV;
@@ -12,11 +16,14 @@ import shared.components.TextInput;
 import mvvm.viewModels.FlightSearchViewModel;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import java.awt.*;
 
 
 public class FlightSearchView extends ViewBase {
@@ -60,17 +67,54 @@ public class FlightSearchView extends ViewBase {
     public void initComponents() {
         this.setLayout(new BorderLayout());
         mainPanel = new FlexPanelV(5, FlexAlignment.TOP);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         mainPanel.setBackground(MaterialColors.WHITE);
         mainPanel.add(TopBar.build(router, logger));
+        createSearchForm();
         createStatusIndicators();
-//        createSearchForm();
-//        createResultsArea();
-
         this.add(mainPanel, BorderLayout.CENTER);
+        this.createResultsArea();
+        if (this.vm.flights.get().getStatus() == Resource.Status.SUCCESS)
+            for (var f : this.vm.flights.get().getData())
+                this.resultsPanel.add(this.createFlightCard(f));
+
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void bind() {
+        this.vm.flights.subscribe((o, n) -> {
+            var data = (Resource<FlightData[]>) n;
+            switch (data.getStatus()) {
+                case LOADING:
+                    this.loadingLabel.setVisible(true);
+                    break;
+                case ERROR:
+                    this.loadingLabel.setVisible(false);
+                    this.errorLabel.setVisible(true);
+                    this.errorLabel.setText(data.getMessage());
+                    break;
+                case SUCCESS:
+                    this.loadingLabel.setVisible(false);
+                    this.resultsPanel.removeAll();
+                    if (data.getData().length == 0)
+                        this.noResultsLabel.setVisible(true);
+                    for (var f : data.getData())
+                        this.resultsPanel.add(this.createFlightCard(f));
+                    resultsScrollPane.revalidate();
+            }
+        });
+        this.vm.departureCity.subscribe((o, n) -> SwingUtilities.invokeLater(() -> this.departureInput.setText((String) n)));
+        this.vm.arrivalCity.subscribe((o, n) -> SwingUtilities.invokeLater(() -> this.arrivalInput.setText((String) n)));
+        this.vm.departureDate.subscribe((o, n) -> SwingUtilities.invokeLater(() -> this.departureDateInput.setText((String) n)));
+        this.vm.arrivalDate.subscribe((o, n) -> SwingUtilities.invokeLater(() -> this.returnDateInput.setText((String) n)));
+        this.vm.passengerCount.subscribe((o, n) -> SwingUtilities.invokeLater(() -> this.passengersSpinner.setValue(n)));
+        this.vm.isRoundTrip.subscribe((o, n) -> SwingUtilities.invokeLater(() -> this.roundTripCheckbox.setSelected((boolean) n)));
     }
 
     private void createSearchForm() {
-        formPanel = new FlexPanelV(10, FlexAlignment.TOP);
+        formPanel = new FlexPanelV(10, FlexAlignment.EVEN);
+        formPanel.setBackground(MaterialColors.WHITE);
         formPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(MaterialColors.GREY_300),
                 "Search Flights",
@@ -80,116 +124,126 @@ public class FlightSearchView extends ViewBase {
                 MaterialColors.BLUE_700
         ));
 
-        // Departure city
-        JLabel departureLabel = new JLabel("Departure City:");
+        //row1
+        FlexPanelH travelInformationPanel = new FlexPanelH(10, FlexAlignment.EVEN);
+        travelInformationPanel.setBackground(MaterialColors.WHITE);
+
+        //      Departure City
+        FlexPanelV departurePanel = new FlexPanelV(8, FlexAlignment.TOP);
+        JLabel departureLabel = new JLabel("Departure City:     ");
         departureLabel.setBackground(MaterialColors.WHITE);
         this.departureInput = new TextInput();
         this.departureErrorLabel = createErrorLabel();
 
-        // Arrival city
-        JLabel arrivalLabel = new JLabel("Arrival City:");
+        departurePanel.add(departureLabel);
+        departurePanel.add(this.departureInput);
+        departurePanel.add(this.departureErrorLabel);
+        departurePanel.setBackground(MaterialColors.WHITE);
+        travelInformationPanel.add(departurePanel);
+
+
+        //      Arrival city
+        FlexPanelV arrivalPanel = new FlexPanelV(8, FlexAlignment.TOP);
+        JLabel arrivalLabel = new JLabel("Arrival City:     ");
         arrivalLabel.setBackground(MaterialColors.WHITE);
         arrivalInput = new TextInput();
         arrivalErrorLabel = createErrorLabel();
 
-        // Dates
-        JLabel departureDateLabel = new JLabel("Departure Date:");
+        arrivalPanel.add(arrivalLabel);
+        arrivalPanel.add(arrivalInput);
+        arrivalPanel.add(arrivalErrorLabel);
+        arrivalPanel.setBackground(MaterialColors.WHITE);
+        travelInformationPanel.add(arrivalPanel);
+
+        //      Departure Date
+        FlexPanelV departureDatePanel = new FlexPanelV(8, FlexAlignment.TOP);
+        JLabel departureDateLabel = new JLabel("Departure Date: dd/mm/YYYY");
         departureDateLabel.setBackground(MaterialColors.WHITE);
         this.departureDateInput = new TextInput();
         this.departureDateErrorLabel = createErrorLabel();
 
-        JLabel returnDateLabel = new JLabel("Return Date:");
+        departureDatePanel.add(departureDateLabel);
+        departureDatePanel.add(departureDateInput);
+        departureDatePanel.add(departureDateErrorLabel);
+        departureDatePanel.setBackground(MaterialColors.WHITE);
+        travelInformationPanel.add(departureDatePanel);
+
+        //      Return Date
+        FlexPanelV returnDatePanel = new FlexPanelV(8, FlexAlignment.TOP);
+        JLabel returnDateLabel = new JLabel("Return Date: dd/mm/YYYY");
         returnDateLabel.setBackground(MaterialColors.WHITE);
         this.returnDateInput = new TextInput();
         this.returnDateErrorLabel = createErrorLabel();
 
-        // Passengers
-        JLabel passengersLabel = new JLabel("Passengers:");
-        passengersLabel.setBackground(MaterialColors.WHITE);
-        SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 1, 10, 1);
-        passengersSpinner = new JSpinner(spinnerModel);
-
-        // Round trip checkbox
-        roundTripCheckbox = new JCheckBox("Round Trip");
-
-        // Add components to form panel
-        formPanel.add(departureLabel);
-        formPanel.add(departureInput);
-        formPanel.add(departureErrorLabel);
-
-        formPanel.add(arrivalLabel);
-        formPanel.add(arrivalInput);
-        formPanel.add(arrivalErrorLabel);
-
-        // Date row panel
-        FlexPanelH datePanel = new FlexPanelH(10, FlexAlignment.LEFT);
-        datePanel.setBackground(MaterialColors.WHITE);
-
-        FlexPanelV departureDatePanel = new FlexPanelV(2, FlexAlignment.TOP);
-        departureDatePanel.add(departureDateLabel);
-        departureDatePanel.add(departureDateInput);
-        departureDatePanel.add(departureDateErrorLabel);
-
-        FlexPanelV returnDatePanel = new FlexPanelV(2, FlexAlignment.TOP);
         returnDatePanel.add(returnDateLabel);
         returnDatePanel.add(returnDateInput);
         returnDatePanel.add(returnDateErrorLabel);
+        returnDatePanel.setBackground(MaterialColors.WHITE);
+        travelInformationPanel.add(returnDatePanel);
 
-        datePanel.add(departureDatePanel);
-        datePanel.add(returnDatePanel);
-        formPanel.add(datePanel);
+        this.formPanel.add(travelInformationPanel);
 
-        // Options row panel
-        FlexPanelH optionsPanel = new FlexPanelH(20, FlexAlignment.LEFT);
-        optionsPanel.setBackground(MaterialColors.WHITE);
+        // row2
+        FlexPanelH optionalInformationPanel = new FlexPanelH(10, FlexAlignment.EVEN);
+        optionalInformationPanel.setBackground(MaterialColors.WHITE);
 
-        FlexPanelV passengersPanel = new FlexPanelV(2, FlexAlignment.TOP);
+        //      Passengers
+        FlexPanelV passengersPanel = new FlexPanelV(8, FlexAlignment.TOP);
+        JLabel passengersLabel = new JLabel("Passengers:");
+        passengersLabel.setBackground(MaterialColors.WHITE);
+        SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 1, 10, 1);
+        this.passengersSpinner = new JSpinner(spinnerModel);
+
+
         passengersPanel.add(passengersLabel);
         passengersPanel.add(passengersSpinner);
+        passengersPanel.setBackground(MaterialColors.WHITE);
+        optionalInformationPanel.add(passengersPanel);
 
-        optionsPanel.add(passengersPanel);
+        //      Round trip
+        FlexPanelV roundTripPanel = new FlexPanelV(8, FlexAlignment.TOP);
+        FlexPanelH optionsPanel = new FlexPanelH(20, FlexAlignment.LEFT);
+        roundTripCheckbox = new JCheckBox("Round Trip");
+        optionsPanel.setBackground(MaterialColors.WHITE);
+
         optionsPanel.add(roundTripCheckbox);
-        formPanel.add(optionsPanel);
+        roundTripPanel.add(optionsPanel);
+        roundTripPanel.setBackground(MaterialColors.WHITE);
+        optionalInformationPanel.add(roundTripCheckbox);
 
-        // Create button panel
-        createButtonPanel();
+        //      buttons
+        buttonPanel = new FlexPanelH(15, FlexAlignment.CENTER);
+        buttonPanel.setBackground(MaterialColors.WHITE);
+
+        this.searchButton = new Button("Search Flights", MaterialColors.BLUE_400_ACCENT, MaterialColors.WHITE, 20, 10);
+        this.searchButton.addActionListener(this::searchButtonHandler);
+        this.clearButton = new Button("Clear", MaterialColors.RED_100_ACCENT, MaterialColors.WHITE, 20, 10);
+        this.clearButton.addActionListener(this::clearFromHandler);
+
+        FlexPanelH buttonsPanel = new FlexPanelH(15, FlexAlignment.CENTER);
+        buttonsPanel.add(this.searchButton);
+        buttonsPanel.add(this.clearButton);
+        buttonsPanel.setBackground(MaterialColors.WHITE);
+        optionalInformationPanel.add(buttonsPanel);
+
+        this.formPanel.add(optionalInformationPanel);
+
+
         mainPanel.add(formPanel);
         mainPanel.add(buttonPanel);
     }
 
-    private void createButtonPanel() {
-        buttonPanel = new FlexPanelH(15, FlexAlignment.CENTER);
-        buttonPanel.setBackground(MaterialColors.WHITE);
-
-        searchButton = new Button("Search Flights",
-                MaterialColors.BLUE_400_ACCENT, MaterialColors.WHITE, 20, 10);
-        searchButton.setEnabled(false);
-
-        clearButton = new Button("Clear",
-                MaterialColors.GREY_500, MaterialColors.WHITE, 20, 10);
-
-        buttonPanel.add(searchButton);
-        buttonPanel.add(clearButton);
-    }
-
     private void createResultsArea() {
         resultsContainer = new FlexPanelV(10, FlexAlignment.TOP);
-        resultsContainer.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(MaterialColors.GREY_300),
-                "Available Flights",
-                TitledBorder.DEFAULT_JUSTIFICATION,
-                TitledBorder.DEFAULT_POSITION,
-                new Font("Arial", Font.BOLD, 14),
-                MaterialColors.GREEN_700
-        ));
 
-        resultsPanel = new FlexPanelV(8, FlexAlignment.TOP);
+        resultsPanel = new FlexPanelV(8, FlexAlignment.EVEN);
         resultsPanel.setBackground(MaterialColors.WHITE);
 
         resultsScrollPane = new JScrollPane(resultsPanel);
-        resultsScrollPane.setPreferredSize(new Dimension(800, 300));
         resultsScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        resultsScrollPane.setBackground(MaterialColors.WHITE);
         resultsScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        resultsScrollPane.getVerticalScrollBar().setUI(new MScrollBar());
 
         noResultsLabel = new JLabel("No flights found. Try a different search.");
         noResultsLabel.setForeground(MaterialColors.GREY_600);
@@ -200,13 +254,15 @@ public class FlightSearchView extends ViewBase {
         resultsContainer.add(noResultsLabel);
 
         mainPanel.add(resultsContainer);
+        resultsScrollPane.setPreferredSize(new Dimension(800, router.getWindow().getHeight() - formPanel.getPreferredSize().height));
+
     }
 
     private void createStatusIndicators() {
         loadingLabel = new JLabel("Searching for flights...");
         loadingLabel.setForeground(MaterialColors.BLUE_600);
         loadingLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        loadingLabel.setVisible(this.vm.isLoading.get());
+        loadingLabel.setVisible(this.vm.flights.get().getStatus() == Resource.Status.LOADING);
 
         errorLabel = new JLabel();
         errorLabel.setForeground(MaterialColors.RED_600);
@@ -225,250 +281,172 @@ public class FlightSearchView extends ViewBase {
         return label;
     }
 
-    @Override
-    public void bind() {
-        logger.info("bindinf start");
+    private JPanel createFlightCard(FlightData flight) {
+        // Main card container
+        FlexPanelH card = new FlexPanelH(15, FlexAlignment.LEFT);
+        card.setBackground(MaterialColors.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MaterialColors.BLUE_300, 1),
+                BorderFactory.createEmptyBorder(15, 20, 15, 20)
+        ));
 
-        this.vm.isLoading.subscribe((o, n) -> {
-            this.loadingLabel.setVisible((Boolean) n);
-            logger.info(String.valueOf(n));
+        // Left side: Flight information
+        FlexPanelV flightInfoPanel = new FlexPanelV(8, FlexAlignment.TOP);
+        flightInfoPanel.setBackground(MaterialColors.WHITE);
+
+        // Flight header with number
+        FlexPanelH headerPanel = new FlexPanelH(10, FlexAlignment.LEFT);
+        headerPanel.setBackground(MaterialColors.WHITE);
+
+        JLabel flightNumberLabel = new JLabel(flight.flightNumber());
+        flightNumberLabel.setFont(flightNumberLabel.getFont().deriveFont(Font.BOLD, 16));
+        flightNumberLabel.setForeground(MaterialColors.BLUE_700);
+
+        // Add airline icon or identifier
+        JLabel airlineBadge = createAirlineBadge(flight.flightNumber());
+
+        headerPanel.add(flightNumberLabel);
+        headerPanel.add(airlineBadge);
+        flightInfoPanel.add(headerPanel);
+
+        // Route information
+        flightInfoPanel.add(createRoutePanel(flight));
+
+        // Departure time with icon
+        flightInfoPanel.add(createDepartureTimePanel(flight));
+
+        FlexPanelH buttonPanel = new FlexPanelH(10, FlexAlignment.CENTER);
+        buttonPanel.setBackground(MaterialColors.WHITE);
+
+        // View details button
+        Button detailsButton = new Button("View Details",
+                MaterialColors.GREY_200, MaterialColors.GREY_800, 12, 6);
+        detailsButton.setFont(detailsButton.getFont().deriveFont(11f));
+//        detailsButton.addActionListener(e -> showFlightDetails(flight));
+        detailsButton.addActionListener(e -> {
+            router.navigateTo(LoginView.class, Map.of("id", flight.id()));
         });
-        logger.info("bindinf start");
-        // Bind input fields to ViewModel properties
-//        bindInputFields();
-//
-//        // Bind error labels
-//        bindErrorLabels();
-//
-//        // Bind commands
-//        bindCommands();
-//
-//        // Bind results
-//        bindResults();
-//
-//        // Bind loading and error states
-//        bindStatusIndicators();
+        // Quick book button
+        Button quickBookButton = new Button("Quick Book",
+                MaterialColors.GREEN_500, MaterialColors.WHITE, 12, 6);
+        quickBookButton.setFont(quickBookButton.getFont().deriveFont(11f));
+//        quickBookButton.addActionListener(e -> quickBookFlight(flight));
+
+        buttonPanel.add(detailsButton);
+        buttonPanel.add(quickBookButton);
+
+        // Duration estimate
+        flightInfoPanel.add(buttonPanel);
+
+        card.add(flightInfoPanel);
+        JPanel tag = new JPanel();
+        tag.setPreferredSize(new Dimension(2, 10)); // 1px width, height will auto adjust to match parent
+        tag.setBackground(MaterialColors.PURPLE_700); // or any other color you want for the separator
+
+        card.add(tag);
+        card.add(flightInfoPanel);
+        tag.setPreferredSize(new Dimension(2, card.getPreferredSize().height));
+        return card;
     }
 
-    //    private void bindInputFields() {
-//        // Departure city
-//        departureInput.getDocument().addDocumentListener(new DocumentListener() {
-//            @Override
-//            public void insertUpdate(DocumentEvent e) {
-//                vm.departureCity().set(departureInput.getText());
-//            }
-//
-//            @Override
-//            public void removeUpdate(DocumentEvent e) {
-//                vm.departureCity().set(departureInput.getText());
-//            }
-//
-//            @Override
-//            public void changedUpdate(DocumentEvent e) {}
-//        });
-//
-//        // Arrival city
-//        arrivalInput.getDocument().addDocumentListener(new DocumentListener() {
-//            @Override
-//            public void insertUpdate(DocumentEvent e) {
-//                vm.arrivalCity().set(arrivalInput.getText());
-//            }
-//
-//            @Override
-//            public void removeUpdate(DocumentEvent e) {
-//                vm.arrivalCity().set(arrivalInput.getText());
-//            }
-//
-//            @Override
-//            public void changedUpdate(DocumentEvent e) {}
-//        });
-//
-//        // Departure date
-//        departureDateInput.addPropertyChangeListener("value", evt -> {
-//            vm.departureDate().set((Date) departureDateInput.getValue());
-//        });
-//
-//        // Return date
-//        returnDateInput.addPropertyChangeListener("value", evt -> {
-//            vm.returnDate().set((Date) returnDateInput.getValue());
-//        });
-//
-//        // Passengers
-//        passengersSpinner.addChangeListener(e -> {
-//            vm.passengers().set((Integer) passengersSpinner.getValue());
-//        });
-//
-//        // Round trip checkbox
-//        roundTripCheckbox.addItemListener(e -> {
-//            boolean isSelected = e.getStateChange() == ItemEvent.SELECTED;
-//            vm.isRoundTrip().set(isSelected);
-//            returnDateInput.setEnabled(isSelected);
-//
-//            if (!isSelected) {
-//                returnDateInput.setValue(null);
-//            }
-//        });
-//    }
-//
-//    private void bindErrorLabels() {
-//        vm.departureCityError().subscribe((oldVal, newVal) -> {
-//            departureErrorLabel.setVisible(newVal != null);
-//            departureErrorLabel.setText((String) newVal);
-//        });
-//
-//        vm.arrivalCityError().subscribe((oldVal, newVal) -> {
-//            arrivalErrorLabel.setVisible(newVal != null);
-//            arrivalErrorLabel.setText((String) newVal);
-//        });
-//
-//        vm.departureDateError().subscribe((oldVal, newVal) -> {
-//            departureDateErrorLabel.setVisible(newVal != null);
-//            departureDateErrorLabel.setText((String) newVal);
-//        });
-//
-//        vm.returnDateError().subscribe((oldVal, newVal) -> {
-//            returnDateErrorLabel.setVisible(newVal != null);
-//            returnDateErrorLabel.setText((String) newVal);
-//        });
-//    }
-//
-//    private void bindCommands() {
-//        // Bind search command
-//        vm.getSearchCommand().subscribeChangeListener(() -> {
-//            searchButton.setEnabled(vm.getSearchCommand().canExecute(null));
-//        });
-//
-//        searchButton.addActionListener((ActionEvent e) -> {
-//            vm.getSearchCommand().execute(null);
-//        });
-//
-//        // Bind clear command
-//        clearButton.addActionListener((ActionEvent e) -> {
-//            vm.getClearCommand().execute(null);
-//        });
-//    }
-//
-//    private void bindResults() {
-//        vm.flights().subscribe((oldVal, newVal) -> {
-//            resultsPanel.removeAll();
-//
-//            if (newVal == null || newVal.isEmpty()) {
-//                noResultsLabel.setVisible(true);
-//            } else {
-//                noResultsLabel.setVisible(false);
-//                for (Flight flight : newVal) {
-//                    resultsPanel.add(createFlightCard(flight));
-//                }
-//            }
-//
-//            resultsPanel.revalidate();
-//            resultsPanel.repaint();
-//        });
-//    }
-//
-//    private JPanel createFlightCard(Flight flight) {
-//        FlexPanelH card = new FlexPanelH(15, FlexAlignment.LEFT);
-//        card.setBackground(MaterialColors.WHITE);
-//        card.setBorder(BorderFactory.createCompoundBorder(
-//                BorderFactory.createLineBorder(MaterialColors.GREY_200),
-//                BorderFactory.createEmptyBorder(10, 15, 10, 15)
-//        ));
-//
-//        // Flight info
-//        FlexPanelV infoPanel = new FlexPanelV(5, FlexAlignment.TOP);
-//        infoPanel.setBackground(MaterialColors.WHITE);
-//
-//        // Flight number and airline
-//        FlexPanelH headerPanel = new FlexPanelH(20, FlexAlignment.LEFT);
-//        JLabel flightNumberLabel = new JLabel(flight.getFlightNumber());
-//        flightNumberLabel.setFont(flightNumberLabel.getFont().deriveFont(Font.BOLD, 14));
-//        flightNumberLabel.setForeground(MaterialColors.BLUE_700);
-//
-//        JLabel airlineLabel = new JLabel(flight.getAirline());
-//        airlineLabel.setForeground(MaterialColors.GREY_700);
-//
-//        headerPanel.add(flightNumberLabel);
-//        headerPanel.add(airlineLabel);
-//        infoPanel.add(headerPanel);
-//
-//        // Route and times
-//        FlexPanelH routePanel = new FlexPanelH(10, FlexAlignment.LEFT);
-//
-//        FlexPanelV departurePanel = new FlexPanelV(2, FlexAlignment.TOP);
-//        JLabel departureTimeLabel = new JLabel(formatTime(flight.getDepartureTime()));
-//        departureTimeLabel.setFont(departureTimeLabel.getFont().deriveFont(Font.BOLD, 16));
-//        JLabel departureAirportLabel = new JLabel(flight.getDepartureAirport());
-//        departureAirportLabel.setForeground(MaterialColors.GREY_600);
-//        departurePanel.add(departureTimeLabel);
-//        departurePanel.add(departureAirportLabel);
-//
-//        FlexPanelV durationPanel = new FlexPanelV(2, FlexAlignment.CENTER);
-//        JLabel durationLabel = new JLabel(flight.getDuration());
-//        durationLabel.setForeground(MaterialColors.GREY_500);
-//        durationPanel.add(new JLabel("→"));
-//        durationPanel.add(durationLabel);
-//
-//        FlexPanelV arrivalPanel = new FlexPanelV(2, FlexAlignment.TOP);
-//        JLabel arrivalTimeLabel = new JLabel(formatTime(flight.getArrivalTime()));
-//        arrivalTimeLabel.setFont(arrivalTimeLabel.getFont().deriveFont(Font.BOLD, 16));
-//        JLabel arrivalAirportLabel = new JLabel(flight.getArrivalAirport());
-//        arrivalAirportLabel.setForeground(MaterialColors.GREY_600);
-//        arrivalPanel.add(arrivalTimeLabel);
-//        arrivalPanel.add(arrivalAirportLabel);
-//
-//        routePanel.add(departurePanel);
-//        routePanel.add(durationPanel);
-//        routePanel.add(arrivalPanel);
-//        infoPanel.add(routePanel);
-//
-//        // Price and select button
-//        FlexPanelV actionPanel = new FlexPanelV(5, FlexAlignment.CENTER);
-//        actionPanel.setBackground(MaterialColors.WHITE);
-//
-//        JLabel priceLabel = new JLabel(String.format("$%.2f", flight.getPrice()));
-//        priceLabel.setFont(priceLabel.getFont().deriveFont(Font.BOLD, 18));
-//        priceLabel.setForeground(MaterialColors.GREEN_700);
-//
-//        Button selectButton = new Button("Select",
-//                MaterialColors.BLUE_500, MaterialColors.WHITE, 15, 8);
-//        selectButton.addActionListener(e -> onFlightSelected(flight));
-//
-//        actionPanel.add(priceLabel);
-//        actionPanel.add(selectButton);
-//
-//        card.add(infoPanel);
-//        card.add(actionPanel);
-//
-//        return card;
-//    }
-//
-//    private void bindStatusIndicators() {
-//        vm.isLoading().subscribe((oldVal, newVal) -> {
-//            loadingLabel.setVisible(Boolean.TRUE.equals(newVal));
-//            searchButton.setEnabled(!Boolean.TRUE.equals(newVal));
-//        });
-//
-//        vm.error().subscribe((oldVal, newVal) -> {
-//            errorLabel.setVisible(newVal != null);
-//            if (newVal != null) {
-//                errorLabel.setText(((ErrorState) newVal).message());
-//            }
-//        });
-//    }
-//
-//    private String formatTime(Date date) {
-//        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-//        return date != null ? timeFormat.format(date) : "";
-//    }
-//
-//    private void onFlightSelected(Flight flight) {
-//        // Implement flight selection logic
-//        JOptionPane.showMessageDialog(this,
-//                String.format("Selected flight %s from %s to %s",
-//                        flight.getFlightNumber(),
-//                        flight.getDepartureAirport(),
-//                        flight.getArrivalAirport()),
-//                "Flight Selected",
-//                JOptionPane.INFORMATION_MESSAGE);
-//    }
+    private JPanel createRoutePanel(FlightData flight) {
+        FlexPanelH routePanel = new FlexPanelH(8, FlexAlignment.LEFT);
+        routePanel.setBackground(MaterialColors.WHITE);
+
+        // Departure city
+        JLabel departureLabel = new JLabel(flight.departureCity());
+        departureLabel.setFont(departureLabel.getFont().deriveFont(Font.BOLD, 14));
+        departureLabel.setForeground(MaterialColors.BLUE_800);
+
+        // Arrow icon
+        JLabel arrowLabel = new JLabel("→");
+        arrowLabel.setFont(arrowLabel.getFont().deriveFont(Font.BOLD, 16));
+        arrowLabel.setForeground(MaterialColors.GREY_600);
+
+        // Destination city
+        JLabel destinationLabel = new JLabel(flight.destinationCity());
+        destinationLabel.setFont(destinationLabel.getFont().deriveFont(Font.BOLD, 14));
+        destinationLabel.setForeground(MaterialColors.GREEN_800);
+
+        routePanel.add(departureLabel);
+        routePanel.add(arrowLabel);
+        routePanel.add(destinationLabel);
+
+        return routePanel;
+    }
+
+
+    private JPanel createDepartureTimePanel(FlightData flight) {
+        FlexPanelH timePanel = new FlexPanelH(5, FlexAlignment.LEFT);
+        timePanel.setBackground(MaterialColors.WHITE);
+
+        // Calendar icon
+        ImageIcon calendarIcon = new ImageIcon(
+                Objects.requireNonNull(getClass().getResource("/icons/ic_calendar_days.png"))
+        );
+
+        JLabel calendar = new JLabel("🕑");
+        calendar.setFont(calendar.getFont().deriveFont(12f));
+
+        // Formatted date and time
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEE, MMM dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        JLabel dateLabel = new JLabel(flight.departureDateTime().format(dateFormatter));
+        dateLabel.setFont(dateLabel.getFont().deriveFont(Font.BOLD, 13));
+        dateLabel.setForeground(MaterialColors.GREY_800);
+
+        JLabel timeLabel = new JLabel(flight.departureDateTime().format(timeFormatter));
+        timeLabel.setFont(timeLabel.getFont().deriveFont(Font.BOLD, 13));
+        timeLabel.setForeground(MaterialColors.BLUE_600);
+
+        timeLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
+        timePanel.add(calendar);
+        timePanel.add(dateLabel);
+        timePanel.add(new JLabel("at"));
+        timePanel.add(timeLabel);
+
+        return timePanel;
+    }
+
+    private String extractAirlineFromNumber(String flightNumber) {
+        // Extract airline code from flight number (first 2-3 characters)
+        if (flightNumber.length() >= 2) {
+            String code = flightNumber.substring(0, 2);
+            return switch (code) {
+                case "AA" -> "American";
+                case "DL" -> "Delta";
+                case "UA" -> "United";
+                case "LH" -> "Lufthansa";
+                case "BA" -> "British Airways";
+                default -> "Airline";
+            };
+        }
+        return "Airline";
+    }
+
+    private JLabel createAirlineBadge(String flightNumber) {
+        String airline = extractAirlineFromNumber(flightNumber);
+        JLabel badge = new JLabel(airline);
+        badge.setFont(badge.getFont().deriveFont(Font.PLAIN, 11));
+        badge.setForeground(MaterialColors.WHITE);
+        badge.setOpaque(true);
+        badge.setBackground(MaterialColors.PURPLE_400);
+        badge.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+
+        return badge;
+    }
+
+    private void clearFromHandler(ActionEvent e) {
+        this.vm.getClearFormCommand().execute(null);
+    }
+
+    private void searchButtonHandler(ActionEvent e) {
+        this.vm.departureCity.set(this.departureInput.getText());
+        this.vm.arrivalCity.set(this.arrivalInput.getText());
+        this.vm.departureDate.set(this.departureDateInput.getText());
+        this.vm.arrivalDate.set(this.returnDateInput.getText());
+        this.vm.passengerCount.set((int) this.passengersSpinner.getValue());
+        this.vm.getSearchCommand().execute(null);
+    }
 }

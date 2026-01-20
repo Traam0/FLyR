@@ -7,8 +7,8 @@ import java.awt.*;
 public class MScrollBar extends BasicScrollBarUI {
 
     private static final int SCROLLBAR_WIDTH = 10;
-    private static final Color THUMB_COLOR = MaterialColors .PURPLE_700_ACCENT;
-    private static final Color TRACK_COLOR = new Color(240, 240, 240);
+    private static final Color THUMB_COLOR = MaterialColors .PURPLE_800;
+    private static final Color TRACK_COLOR = MaterialColors.PURPLE_50;
 
     @Override
     protected void configureScrollBarColors() {

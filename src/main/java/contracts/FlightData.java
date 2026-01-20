@@ -11,5 +11,10 @@ public record FlightData(
         @JsonProperty("destinationCity") String destinationCity,
         @JsonProperty("departureDateTime") LocalDateTime departureDateTime
 ) {
+    @Override
+    public String toString() {
+        return String.format("Flight %s: %s → %s",
+                flightNumber, departureCity, destinationCity);
+    }
 }
 

@@ -27,21 +27,17 @@ public final class RelayCommand implements Command {
         return this.canExecute.test(param);
     }
 
-    public final void canExecuteChanged() {
+    public void canExecuteChanged() {
         this.listeners.forEach(CanExecuteChangedListener::canExecuteChanged);
     }
 
-    public final void subscribeChangeListener(CanExecuteChangedListener listener) {
+    public void subscribeChangeListener(CanExecuteChangedListener listener) {
         if (this.listeners.contains(listener)) return;
         this.listeners.add(listener);
     }
 
-    public final void unsubscribeChangeListener(CanExecuteChangedListener listener) {
+    public void unsubscribeChangeListener(CanExecuteChangedListener listener) {
         this.listeners.remove(listener);
     }
 
-
-    public interface CanExecuteChangedListener extends EventListener {
-        void canExecuteChanged();
-    }
 }

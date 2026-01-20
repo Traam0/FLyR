@@ -2,15 +2,11 @@ import core.abstraction.SwingApp;
 import core.abstraction.SwingRouter;
 import core.dependencyInjection.ServiceCollection;
 import core.dependencyInjection.ServiceProvider;
-import core.navigation.Router;
-import core.networking.HttpRestClient;
 import core.networking.HttpRestClientFactory;
-import core.networking.JerseyHttpRestClient;
-import core.security.AuthContext;
 import core.security.AuthService;
 import mvvm.viewModels.FlightSearchViewModel;
 import mvvm.views.LoginView;
-import mvvm.views.user.FlightSearchView;
+import mvvm.views.flight.FlightSearchView;
 import services.AuthenticationService;
 import services.FlightsService;
 
@@ -52,7 +48,7 @@ public class Application extends SwingApp {
             JFrame window = router.getWindow();
 
             window.setTitle("FlyR");
-            window.setSize(1024, 768);
+            window.setSize(1024, 800);
 
             // Set application icon
             try {

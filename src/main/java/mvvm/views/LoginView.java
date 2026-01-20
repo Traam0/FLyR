@@ -2,7 +2,7 @@ package mvvm.views;
 
 import core.abstraction.ViewBase;
 import core.navigation.Router;
-import mvvm.views.user.FlightSearchView;
+import mvvm.views.flight.FlightSearchView;
 import shared.common.FlexAlignment;
 import shared.common.MaterialColors;
 import shared.components.Button;

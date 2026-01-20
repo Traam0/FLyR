@@ -5,10 +5,17 @@ import java.util.List;
 
 public class Property<T> {
     private T value;
+    private final boolean optimize;
     private final List<PropertyChangeListener> subscribers;
 
     public Property(T value) {
         this.value = value;
+        this.optimize = false;
+        this.subscribers = new ArrayList<>();
+    }
+    public Property(T value, boolean optimize) {
+        this.value = value;
+        this.optimize = optimize;
         this.subscribers = new ArrayList<>();
     }
 
@@ -17,7 +24,7 @@ public class Property<T> {
     }
 
     public void set(T value) {
-        if (this.value == value) return;
+        if (this.value == value && this.optimize) return;
         this.subscribers.forEach(sub -> sub.onPropertyChange(this.value, value));
         this.value = value;
     }
