@@ -1,6 +1,7 @@
 package shared.layouts;
 
 import shared.common.FlexAlignment;
+import shared.common.MaterialColors;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,6 +13,7 @@ public class FlexPanelH extends JPanel {
 
     public FlexPanelH() {
         setLayout(new HorizontalFlexLayout());
+        this.setBackground(MaterialColors.WHITE);
     }
 
     public FlexPanelH(int gap) {

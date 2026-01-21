@@ -4,8 +4,10 @@ import core.dependencyInjection.ServiceCollection;
 import core.dependencyInjection.ServiceProvider;
 import core.networking.HttpRestClientFactory;
 import core.security.AuthService;
+import mvvm.viewModels.FlightDetailViewModel;
 import mvvm.viewModels.FlightSearchViewModel;
 import mvvm.views.LoginView;
+import mvvm.views.flight.FlightDetailView;
 import mvvm.views.flight.FlightSearchView;
 import services.AuthenticationService;
 import services.FlightsService;
@@ -33,10 +35,12 @@ public class Application extends SwingApp {
 
         //ViewModels
         services.registerScoped(FlightSearchViewModel.class, FlightSearchViewModel.class);
+        services.registerScoped(FlightDetailViewModel.class, FlightDetailViewModel.class);
 
         //Views
         services.registerTransient(LoginView.class, LoginView.class);
         services.registerTransient(FlightSearchView.class, FlightSearchView.class);
+        services.registerTransient(FlightDetailView.class, FlightDetailView.class);
 
     }
 
@@ -62,6 +66,6 @@ public class Application extends SwingApp {
 
     @Override
     protected void startApplication() {
-        this.showWindow(FlightSearchView.class);
+        this.showWindow(FlightDetailView.class);
     }
 }

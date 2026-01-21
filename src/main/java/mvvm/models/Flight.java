@@ -1,6 +1,9 @@
 package mvvm.models;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class Flight {
     private int id;
@@ -10,7 +13,8 @@ public final class Flight {
     private LocalDateTime departureDateTime;
     private AirCraft airCraft;
 
-    public Flight() {}
+    public Flight() {
+    }
 
     public Flight(int id, String flightNumber, String departureCity, String destinationCity,
                   LocalDateTime departureDateTime, AirCraft airCraft) {
@@ -22,20 +26,57 @@ public final class Flight {
         this.airCraft = airCraft;
     }
 
-    public int getId() { return id; }
+    public int getId() {
+        return id;
+    }
 
-    public String getFlightNumber() { return flightNumber; }
-    public void setFlightNumber(String flightNumber) { this.flightNumber = flightNumber; }
+    public String getFlightNumber() {
+        return flightNumber;
+    }
 
-    public String getDepartureCity() { return departureCity; }
-    public void setDepartureCity(String departureCity) { this.departureCity = departureCity; }
+    public void setFlightNumber(String flightNumber) {
+        this.flightNumber = flightNumber;
+    }
 
-    public String getDestinationCity() { return destinationCity; }
-    public void setDestinationCity(String destinationCity) { this.destinationCity = destinationCity; }
+    public String getDepartureCity() {
+        return departureCity;
+    }
 
-    public LocalDateTime getDepartureDateTime() { return departureDateTime; }
-    public void setDepartureDateTime(LocalDateTime departureDateTime) { this.departureDateTime = departureDateTime; }
+    public void setDepartureCity(String departureCity) {
+        this.departureCity = departureCity;
+    }
 
-    public AirCraft getAirCraft() { return airCraft; }
-    public void setAirCraft(AirCraft airCraft) { this.airCraft = airCraft; }
+    public String getDestinationCity() {
+        return destinationCity;
+    }
+
+    public void setDestinationCity(String destinationCity) {
+        this.destinationCity = destinationCity;
+    }
+
+    public LocalDateTime getDepartureDateTime() {
+        return departureDateTime;
+    }
+
+    public void setDepartureDateTime(LocalDateTime departureDateTime) {
+        this.departureDateTime = departureDateTime;
+    }
+
+    public AirCraft getAirCraft() {
+        return airCraft;
+    }
+
+    public void setAirCraft(AirCraft airCraft) {
+        this.airCraft = airCraft;
+    }
+
+
+    public Map<String, Object> toMap() throws IllegalAccessException {
+        Map<String, Object> map = new HashMap<>();
+        for (Field field : this.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            map.put(field.getName(), field.get(this));
+        }
+        return map;
+    }
 }

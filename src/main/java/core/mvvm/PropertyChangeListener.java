@@ -1,6 +1,6 @@
 package core.mvvm;
 
 @FunctionalInterface
-public interface PropertyChangeListener {
-    void onPropertyChange(Object oldValue, Object newValue);
+public interface PropertyChangeListener<T> {
+    void onPropertyChange(T oldValue, T newValue);
 }

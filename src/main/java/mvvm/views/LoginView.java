@@ -40,6 +40,9 @@ public final class LoginView extends ViewBase {
         flexPanel.add(defaultScreenBtn);
         flexPanel.add(new JLabel("OR"));
         Button adminScreenBtn = new Button("ADMIN", MaterialColors.CYAN_700, MaterialColors.WHITE, 20, 15);
+        adminScreenBtn.addActionListener(e -> {
+            throw new RuntimeException("NOT YET IMPLEMENTED");
+        });
         flexPanel.add(adminScreenBtn);
 
 

@@ -2,6 +2,7 @@ package shared.components;
 
 import core.navigation.Router;
 import mvvm.views.LoginView;
+import mvvm.views.flight.FlightSearchView;
 import shared.common.MaterialColors;
 import shared.layouts.FlexPanelH;
 import shared.layouts.FlexPanelV;
@@ -49,7 +50,7 @@ public class TopBar extends FlexPanelH {
 
     private void onSearchBtnClick(ActionEvent e) {
         this.logger.info("Search Button clicked");
-        //TODO
+        this.router.navigateTo(FlightSearchView.class);
     }
 
     public static TopBar build(Router router, Logger logger) {

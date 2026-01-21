@@ -1,21 +1,22 @@
 package core.mvvm;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Property<T> {
     private T value;
-    private final boolean optimize;
-    private final List<PropertyChangeListener> subscribers;
+    private final EnumSet<PropertyFlags> flags;
+    private final List<PropertyChangeListener<T>> subscribers;
 
     public Property(T value) {
-        this.value = value;
-        this.optimize = false;
-        this.subscribers = new ArrayList<>();
+        this(value, PropertyFlags.NONE);
     }
-    public Property(T value, boolean optimize) {
+
+    public Property(T value, PropertyFlags... flags) {
         this.value = value;
-        this.optimize = optimize;
+        this.flags = flags.length == 0
+                ? EnumSet.of(PropertyFlags.NONE)
+                : EnumSet.noneOf(PropertyFlags.class);
+        Collections.addAll(this.flags, flags);
         this.subscribers = new ArrayList<>();
     }
 
@@ -24,16 +25,27 @@ public class Property<T> {
     }
 
     public void set(T value) {
-        if (this.value == value && this.optimize) return;
-        this.subscribers.forEach(sub -> sub.onPropertyChange(this.value, value));
+        if (this.flags.contains(PropertyFlags.READ_ONLY))
+            throw new IllegalArgumentException("Cannot set read-only property");
+
+        if (this.flags.contains(PropertyFlags.DISTINCT_VALUE) && this.value == value) return;
+        if (this.flags.contains(PropertyFlags.EQUALS_VALUE) && Objects.equals(this.value, value)) return;
+
+        var old = this.value;
         this.value = value;
+
+        if (!this.flags.contains(PropertyFlags.SILENT_UPDATES))
+            this.subscribers.forEach(sub -> sub.onPropertyChange(old, value));
     }
 
-    public void subscribe(PropertyChangeListener subscriber) {
+    public void subscribe(PropertyChangeListener<T> subscriber) {
         this.subscribers.add(subscriber);
+        if (flags.contains(PropertyFlags.REPLAY_LAST)) {
+            subscriber.onPropertyChange(this.value, this.value);
+        }
     }
 
-    public void unsubscribe(PropertyChangeListener subscriber) {
+    public void unsubscribe(PropertyChangeListener<T> subscriber) {
         this.subscribers.remove(subscriber);
     }
 }
