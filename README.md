@@ -108,3 +108,7 @@ The server exposes the following primary endpoints:
 *   `GET /flights/search`: Searches for flights with query parameters.
     *   **Params**: `departure`, `arrival`, `from`, `to` (optional), `passengers`, `roundTrip` (boolean).
 *   `GET /flights/{id}`: Retrieves a single flight by its ID.
+
+## TODO
+- potential **MEMORY LEAKS** in `Property<>`, the Property keeps holding Strong ref to the lambdas registered in the `View`, memory leak is bound to happen if the `PropertyChangeListener` registers in said view references or uses the `this` keyword which keeps the view from being destroyed even tho they are registered as `Transiant` dependencies. THE Fix will include adding a dispose method the `View` interface **OR** having the `PropertyChangeListener` being registered as `WeakReferences` within the bind method 
+    

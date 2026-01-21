@@ -23,7 +23,7 @@ public class FlightSearchViewModel {
     private final RelayCommand clearFormCommand;
     private final RelayCommand searchCommand;
 
-    public FlightSearchViewModel(FlightsService flightsService, Logger logger) {
+    public FlightSearchViewModel(FlightsService flightsService) {
         // Properties
         this.flightsService = flightsService;
         this.departureCity = new Property<>("");
@@ -46,7 +46,6 @@ public class FlightSearchViewModel {
 
         this.searchCommand = new RelayCommand(param -> {
             this.flights.set(Resource.loading());
-            logger.info("Searching for flights");
             new Thread(() -> {
                 var result = this.flightsService.filterFlights(new FlightSearchFilter(departureCity.get(), arrivalCity.get(), departureDate.get(), arrivalDate.get(), passengerCount.get(), isRoundTrip.get()));
                 this.flights.set(result);

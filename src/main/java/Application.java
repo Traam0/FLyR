@@ -66,6 +66,6 @@ public class Application extends SwingApp {
 
     @Override
     protected void startApplication() {
-        this.showWindow(FlightDetailView.class);
+        this.showWindow(LoginView.class);
     }
 }

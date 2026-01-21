@@ -70,7 +70,7 @@ public class SwingRouter implements Router {
     private void push(Class<? extends View> view) {
         SwingUtilities.invokeLater(() -> {
             var viewName = view.getSimpleName();
-            this.window.setTitle(viewName.substring(0,  viewName.length() - "view".length()));
+            this.window.setTitle(viewName.substring(0, viewName.length() - "view".length()));
             this.window.getContentPane().removeAll();
             this.window.getContentPane().add((Component) this.serviceProvider.getRequiredService(view));
             this.window.revalidate();

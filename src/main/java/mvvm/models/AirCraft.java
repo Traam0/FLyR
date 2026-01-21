@@ -1,12 +1,20 @@
 package mvvm.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public final class AirCraft {
+    @JsonProperty("id")
     private int id;
+    @JsonProperty("code")
     private String code;
-    private String model;
-    private int totalCapacity;
-    private int economyCapacity;
-    private int businessCapacity;
+    @JsonProperty("model")
+    String model;
+    @JsonProperty("totalCapacity")
+    int totalCapacity;
+    @JsonProperty("economyCapacity")
+    int economyCapacity;
+    @JsonProperty("businessCapacity")
+    int businessCapacity;
 
     public AirCraft() {
     }

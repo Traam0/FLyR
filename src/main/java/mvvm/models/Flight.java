@@ -1,17 +1,19 @@
 package mvvm.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class Flight {
-    private int id;
-    private String flightNumber;
-    private String departureCity;
-    private String destinationCity;
-    private LocalDateTime departureDateTime;
-    private AirCraft airCraft;
+    @JsonProperty("id") private int id;
+    @JsonProperty("flightNumber") private String flightNumber;
+    @JsonProperty("departureCity") private String departureCity;
+    @JsonProperty("destinationCity") private String destinationCity;
+    @JsonProperty("departureDateTime") private LocalDateTime departureDateTime;
+    @JsonProperty("airCraft") private AirCraft airCraft;
 
     public Flight() {
     }

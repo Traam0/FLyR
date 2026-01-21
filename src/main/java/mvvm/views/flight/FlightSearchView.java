@@ -71,10 +71,9 @@ public class FlightSearchView extends ViewBase {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void bind() {
         this.vm.flights.subscribe((o, n) -> {
-            switch (((Resource<FlightData[]>) n).getStatus()) {
+            switch (n.getStatus()) {
                 case LOADING:
                     this.loadingLabel.setVisible(true);
                     break;
@@ -351,7 +350,6 @@ public class FlightSearchView extends ViewBase {
 
         return routePanel;
     }
-
 
     private JPanel createDepartureTimePanel(FlightData flight) {
         FlexPanelH timePanel = new FlexPanelH(5, FlexAlignment.LEFT);
