@@ -166,9 +166,21 @@ public class JerseyHttpRestClient implements HttpRestClient {
 
             if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
                 // Try to parse as ApiResponse
+                logger.info(String.valueOf(response.getStatus()) + " " + fullPath);
+                logger.info(String.valueOf(responseBody));
                 try {
-                    return objectMapper.readValue(responseBody,
-                            objectMapper.getTypeFactory().constructParametricType(ApiResponse.class, dataType));
+                    //TODO REFACTOR (INCOMPLETE)
+                    // JACKSON EXPECTS SERVER TO RESPOND WITH ApiResponse WHEN IT DOESNT SO IT SKIPS WHEN RESPONSE IS
+                    // PLAIN OBJECT RESULTING IN NULL SINCE WE DISABLED THE FAIL_ON_UNKNOWN_PROPERTIES AND WHEN RESPONSE IS A AN Array, IT THROWS
+                    // JUST FOR IT TO BE CAUGHT LATER AND MANUALLY MAPPED TO ApiResponse
+//                    ApiResponse<T> apiResponse = objectMapper.readValue(responseBody,
+//                            objectMapper.getTypeFactory().constructParametricType(ApiResponse.class, dataType));
+//                    if (apiResponse.getData() == null) {
+                    // Treat as plain object
+//                    }
+
+                    return ApiResponse.success(objectMapper.readValue(responseBody, dataType));
+//                    return apiResponse;
                 } catch (JsonProcessingException e) {
                     // If not ApiResponse, wrap the data
                     T data = objectMapper.readValue(responseBody, dataType);
