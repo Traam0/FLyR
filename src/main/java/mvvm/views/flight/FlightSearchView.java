@@ -2,6 +2,7 @@ package mvvm.views.flight;
 
 import contracts.FlightData;
 import contracts.wrappers.Resource;
+import core.abstraction.ProtectedView;
 import core.abstraction.ViewBase;
 import shared.common.MScrollBar;
 import shared.common.MaterialColors;
@@ -25,7 +26,7 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 
-public class FlightSearchView extends ViewBase {
+public class FlightSearchView extends ProtectedView {
     private final FlightSearchViewModel vm;
     private final Router router;
     private final Logger logger;
@@ -46,6 +47,7 @@ public class FlightSearchView extends ViewBase {
 
 
     public FlightSearchView(Router router, Logger logger, FlightSearchViewModel viewModel) {
+        super(router);
         this.vm = viewModel;
         this.router = router;
         this.logger = logger;

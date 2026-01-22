@@ -2,6 +2,8 @@ package mvvm.views;
 
 import core.abstraction.ViewBase;
 import core.navigation.Router;
+import core.security.AuthContext;
+import core.security.UserPrincipal;
 import mvvm.views.flight.FlightSearchView;
 import shared.common.FlexAlignment;
 import shared.common.MaterialColors;
@@ -26,9 +28,11 @@ public final class LoginView extends ViewBase {
         this.setLayout(new BorderLayout());
         FlexPanelV flexPanel = new FlexPanelV(10, FlexAlignment.CENTER);
         flexPanel.add(new JLabel("Continue AS"));
+        if (this.router.getParams().containsKey("redirect") && this.router.getParams().get("redirect").equals(true))
+            flexPanel.add(new JLabel("will redirect to previous"));
         Button defaultScreenBtn = new Button("USER", MaterialColors.PURPLE_500, MaterialColors.WHITE, 20, 15);
         defaultScreenBtn.addActionListener(e -> {
-           router.navigateTo(FlightSearchView.class);
+            router.navigateTo(FlightSearchView.class);
         });
         this.setBackground(MaterialColors.WHITE);
         flexPanel.setBackground(MaterialColors.WHITE);
