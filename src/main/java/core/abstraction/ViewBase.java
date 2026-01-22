@@ -8,7 +8,5 @@ import javax.swing.*;
 public abstract class ViewBase extends JPanel implements View {
     public ViewBase() {
         this.setBackground(MaterialColors.WHITE);
-//        this.initComponents();
-//        this.bind();
     }
 }

@@ -20,6 +20,7 @@ public class SwingRouter implements Router {
     private final ServiceProvider serviceProvider;
     private final Stack<Class<? extends View>> history = new Stack<>();
     private final Map<String, Object> params;
+    private Class<? extends View> authView;
 
     public SwingRouter(Logger logger, ServiceProvider serviceProvider) {
         this.window = new JFrame();
@@ -27,6 +28,11 @@ public class SwingRouter implements Router {
         this.serviceProvider = serviceProvider;
         this.context = serviceProvider.getRequiredService(AuthContext.class);
         this.params = new HashMap<>();
+    }
+
+    @Override
+    public void setAuthView(Class<? extends View> view) {
+        this.authView = view;
     }
 
     @Override
@@ -53,6 +59,12 @@ public class SwingRouter implements Router {
             this.window.revalidate();
             this.window.repaint();
         });
+    }
+
+    @Override
+    public void authenticate() {
+        if (this.authView == null) return;
+        this.navigateTo(this.authView, Map.of("redirect", true));
     }
 
     public JFrame getWindow() {
