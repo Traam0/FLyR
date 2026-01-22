@@ -27,6 +27,7 @@ public final class RelayCommand implements Command {
         return this.canExecute.test(param);
     }
 
+    @Override
     public void canExecuteChanged() {
         this.listeners.forEach(CanExecuteChangedListener::canExecuteChanged);
     }

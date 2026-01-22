@@ -105,8 +105,10 @@ public class JerseyHttpRestClient implements HttpRestClient {
             String jsonBody = serializeToJson(body);
             Response response = buildRequest(target)
                     .post(Entity.entity(jsonBody, MediaType.APPLICATION_JSON));
+
             return handleResponse(response, responseType);
         } catch (RestClientException e) {
+            logger.severe(e.getResponseBody());
             throw e;
         } catch (Exception e) {
             throw new RestClientException("POST request failed for path: " + path, e);
@@ -260,6 +262,7 @@ public class JerseyHttpRestClient implements HttpRestClient {
     private <T> T handleResponse(Response response, Class<T> responseType) {
         int status = response.getStatus();
         String responseBody = response.readEntity(String.class);
+        logger.info("Response body: " + responseBody);
 
         logger.fine("Response status: " + status);
         logger.finest("Response body: " + responseBody);

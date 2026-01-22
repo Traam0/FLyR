@@ -6,9 +6,7 @@ import core.database.Repository;
 import mvvm.models.AirCraft;
 import mvvm.models.Flight;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -16,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-public class FlightsRepository implements Repository<Flight, Integer> {
+public final class FlightsRepository implements Repository<Flight, Integer> {
     private final ConnectionPool connectionPool;
     private final Logger logger;
 
@@ -52,16 +50,30 @@ public class FlightsRepository implements Repository<Flight, Integer> {
 
     @Override
     public Optional<Flight> selectWhereId(Integer id) {
-        Optional<Flight> flight = Optional.empty();
+        var sql = """
+                SELECT
+                    f.id,
+                    f.flight_number,
+                    f.departure_city,
+                    f.destination_city,
+                    f.departure_date_time,
+                    a.id AS aircraft_id,
+                    a.code,
+                    a.model,
+                    a.total_capacity,
+                    a.economy_capacity,
+                    a.business_capacity
+                FROM flight f
+                INNER JOIN aircraft a ON f.aircraft_id = a.id
+                WHERE f.id = ?
+                """;
         try (PooledConnection pooledConnection = this.connectionPool.borrow()) {
             Connection connection = pooledConnection.get();
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                    "SELECT flight.*, aircraft.total_capacity, aircraft.model, aircraft.code, aircraft.business_capacity, aircraft.economy_capacity FROM flight inner join aircraft on aircraft.id = flight.id where flight.id = ? "
-            );
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setInt(1, id);
             var result = preparedStatement.executeQuery();
             if (result.next()) {
-                flight = Optional.of(new Flight(
+                return Optional.of(new Flight(
                         result.getInt("id"),
                         result.getString("flight_number"),
                         result.getString("departure_city"),
@@ -81,13 +93,11 @@ public class FlightsRepository implements Repository<Flight, Integer> {
         } catch (Exception e) {
             this.logger.severe(String.format("Error while borrowing connection: %s", e.getMessage()));
         }
-        return flight;
+        return Optional.empty();
     }
 
     public List<Flight> searchFlights(String departure, String arrival, String fromDate, int passengerCount) {
         List<Flight> flights = new ArrayList<>();
-
-        // Parse date (assuming "dd/MM/yyyy")
         LocalDateTime fromDateTime;
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -120,7 +130,6 @@ public class FlightsRepository implements Repository<Flight, Integer> {
 
                 try (var rs = stmt.executeQuery()) {
                     while (rs.next()) {
-                        // For now we can leave aircraft as null, or you can join it if needed
                         flights.add(new Flight(
                                 rs.getInt("id"),
                                 rs.getString("flight_number"),
@@ -142,26 +151,181 @@ public class FlightsRepository implements Repository<Flight, Integer> {
 
     @Override
     public List<Flight> selectWhereEq(String field, Object value) {
-        return List.of();
+
+        List<Flight> flights = new ArrayList<>();
+        var sql = """
+                SELECT
+                     f.id,
+                     f.flight_number,
+                     f.departure_city,
+                     f.destination_city,
+                     f.departure_date_time,
+                     a.id AS aircraft_id,
+                     a.code,
+                     a.model,
+                     a.total_capacity,
+                     a.economy_capacity,
+                     a.business_capacity
+                 FROM flight f
+                 INNER JOIN aircraft a ON f.aircraft_id = a.id
+                 WHERE f.%s = ?
+                """;
+
+        try (PooledConnection pooledConnection = this.connectionPool.borrow()) {
+            Connection connection = pooledConnection.get();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(String.format(sql, field))) {
+                preparedStatement.setObject(1, value);
+                __(flights, preparedStatement);
+            }
+        } catch (Exception e) {
+            this.logger.severe(String.format("Error while selecting where %s = %s: %s",
+                    field, value, e.getMessage()));
+        }
+        return flights;
     }
 
     @Override
-    public List<Flight> selectWhereIn(String field, Object... value) {
-        return List.of();
+    public List<Flight> selectWhereIn(String field, Object... values) {
+        List<Flight> flights = new ArrayList<>();
+        if (values.length == 0) return flights;
+
+        // Build placeholders for IN clause
+        String placeholders = String.join(",", java.util.Collections.nCopies(values.length, "?"));
+        String sql = String.format("""
+                SELECT 
+                    f.id,
+                    f.flight_number,
+                    f.departure_city,
+                    f.destination_city,
+                    f.departure_date_time,
+                    a.id AS aircraft_id,
+                    a.code,
+                    a.model,
+                    a.total_capacity,
+                    a.economy_capacity,
+                    a.business_capacity
+                FROM flight f
+                INNER JOIN aircraft a ON f.aircraft_id = a.id
+                WHERE f.%s IN (%s)
+                """, field, placeholders);
+
+        try (PooledConnection pooledConnection = this.connectionPool.borrow()) {
+            Connection connection = pooledConnection.get();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                for (int i = 0; i < values.length; i++) {
+                    preparedStatement.setObject(i + 1, values[i]);
+                }
+                __(flights, preparedStatement);
+            }
+        } catch (Exception e) {
+            this.logger.severe(String.format("Error while selecting where %s IN: %s",
+                    field, e.getMessage()));
+        }
+        return flights;
     }
 
     @Override
     public boolean create(Flight value) {
+        String sql = """
+                INSERT INTO flight (flight_number, departure_city, destination_city, 
+                                   departure_date_time, aircraft_id)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+
+        try (PooledConnection pooledConnection = this.connectionPool.borrow()) {
+            Connection connection = pooledConnection.get();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql,
+                    Statement.RETURN_GENERATED_KEYS)) {
+                preparedStatement.setString(1, value.getFlightNumber());
+                preparedStatement.setString(2, value.getDepartureCity());
+                preparedStatement.setString(3, value.getDestinationCity());
+                preparedStatement.setTimestamp(4, Timestamp.valueOf(value.getDepartureDateTime()));
+                preparedStatement.setInt(5, value.getAirCraft().getId());
+
+                int affectedRows = preparedStatement.executeUpdate();
+                if (affectedRows > 0) {
+//                    logger.info(String.format("Created flight: %s", value.getFlightNumber()));
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            this.logger.severe(String.format("Error while creating flight: %s", e.getMessage()));
+        }
         return false;
     }
 
     @Override
-    public Flight update(Flight flight) {
+    public Flight update(Flight value) {
+        String sql = """
+                UPDATE flight
+                SET flight_number = ?,
+                    departure_city = ?,
+                    destination_city = ?,
+                    departure_date_time = ?,
+                    aircraft_id = ?
+                WHERE id = ?
+                """;
+
+        try (PooledConnection pooledConnection = this.connectionPool.borrow()) {
+            Connection connection = pooledConnection.get();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setString(1, value.getFlightNumber());
+                preparedStatement.setString(2, value.getDepartureCity());
+                preparedStatement.setString(3, value.getDestinationCity());
+                preparedStatement.setTimestamp(4, Timestamp.valueOf(value.getDepartureDateTime()));
+                preparedStatement.setInt(5, value.getAirCraft().getId());
+                preparedStatement.setInt(6, value.getId());
+
+                int affectedRows = preparedStatement.executeUpdate();
+                if (affectedRows > 0) {
+                    logger.info(String.format("Updated flight ID: %d", value.getId()));
+                    return value;
+                }
+            }
+        } catch (Exception e) {
+            this.logger.severe(String.format("Error while updating flight: %s", e.getMessage()));
+        }
         return null;
     }
 
     @Override
-    public boolean delete(Flight flight) {
+    public boolean delete(Flight value) {
+        String sql = "DELETE FROM flight WHERE id = ?";
+
+        try (PooledConnection pooledConnection = this.connectionPool.borrow()) {
+            Connection connection = pooledConnection.get();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setInt(1, value.getId());
+                int affectedRows = preparedStatement.executeUpdate();
+                if (affectedRows > 0) {
+                    logger.info(String.format("Deleted flight ID: %d", value.getId()));
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            this.logger.severe(String.format("Error while deleting flight: %s", e.getMessage()));
+        }
         return false;
+    }
+
+    private void __(List<Flight> flights, PreparedStatement preparedStatement) throws SQLException {
+        var result = preparedStatement.executeQuery();
+        while (result.next()) {
+            flights.add(new Flight(
+                    result.getInt("id"),
+                    result.getString("flight_number"),
+                    result.getString("departure_city"),
+                    result.getString("destination_city"),
+                    result.getTimestamp("departure_date_time").toLocalDateTime(),
+                    new AirCraft(
+                            result.getInt("aircraft_id"),
+                            result.getString("code"),
+                            result.getString("model"),
+                            result.getInt("total_capacity"),
+                            result.getInt("economy_capacity"),
+                            result.getInt("business_capacity")
+                    )
+            ));
+        }
     }
 }

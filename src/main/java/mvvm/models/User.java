@@ -11,7 +11,6 @@ public class User {
     private String password;
     @JsonProperty("role")
     private Role role;
-    @JsonProperty("client")
     private Client client;
 
     // Constructor to initialize the User (id is not passed in constructor)

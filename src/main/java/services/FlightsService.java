@@ -44,7 +44,7 @@ public class FlightsService {
 
     public Resource<Flight> getFlight(int id) {
         try {
-            var response = this.httpClient.getWithApiResponse(String.format("/flights/%s", id), Flight.class);
+            var response = this.httpClient.getWithApiResponse(String.format("/flights/%s/details", id), Flight.class);
             if (response.isSuccess()) return Resource.success(response.getData());
             return Resource.error(response.getMessage());
         } catch (Exception e) {

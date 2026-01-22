@@ -6,6 +6,7 @@ import core.networking.HttpRestClientFactory;
 import core.security.AuthService;
 import mvvm.viewModels.FlightDetailViewModel;
 import mvvm.viewModels.FlightSearchViewModel;
+import mvvm.viewModels.LoginViewModel;
 import mvvm.views.LoginView;
 import mvvm.views.flight.FlightDetailView;
 import mvvm.views.flight.FlightSearchView;
@@ -34,6 +35,7 @@ public class Application extends SwingApp {
         services.registerScoped(FlightsService.class, FlightsService.class);
 
         //ViewModels
+        services.registerScoped(LoginViewModel.class, LoginViewModel.class);
         services.registerScoped(FlightSearchViewModel.class, FlightSearchViewModel.class);
         services.registerScoped(FlightDetailViewModel.class, FlightDetailViewModel.class);
 
@@ -52,7 +54,7 @@ public class Application extends SwingApp {
             JFrame window = router.getWindow();
 
             window.setTitle("FlyR");
-            window.setSize(1024, 800);
+            window.setSize(1100, 850);
 
             // Set application icon
             try {
@@ -66,6 +68,7 @@ public class Application extends SwingApp {
 
     @Override
     protected void startApplication() {
+        this.getRouter().setAuthView(LoginView.class);
         this.showWindow(LoginView.class);
     }
 }

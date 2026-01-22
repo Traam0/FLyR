@@ -1,10 +1,12 @@
 package controllers;
 
+import core.abstractions.ControllerBase;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import mvvm.models.Flight;
 import repositories.FlightsRepository;
+import repositories.SeatsRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -13,12 +15,14 @@ import java.util.logging.Logger;
 @Path("/flights")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class FlightController {
+public class FlightController extends ControllerBase {
     private static final Logger logger = Logger.getLogger(FlightController.class.getName());
     private final FlightsRepository repository;
+    private final SeatsRepository seatsRepository;
 
-    public FlightController(FlightsRepository repository) {
+    public FlightController(FlightsRepository repository, SeatsRepository seatsRepository) {
         this.repository = repository;
+        this.seatsRepository = seatsRepository;
     }
 
     @GET
@@ -27,24 +31,6 @@ public class FlightController {
             var result = this.repository.selectAll();
             if (result.isEmpty()) return Response.status(Response.Status.NO_CONTENT).build();
             return Response.ok(result).build();
-        } catch (Exception e) {
-            logger.severe("Error getting flights: " + e.getMessage());
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "Failed to retrieve flights"))
-                    .build();
-        }
-    }
-
-    @GET
-    @Path("/{id}")
-    public Response getFlight(@PathParam("id") int id) {
-        try {
-            var flight = this.repository.selectWhereId(id);
-            if (flight.isEmpty())
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(Map.of("message", String.format("Flight %d does not or no longer exists", id)))
-                        .build();
-            return Response.ok(flight).build();
         } catch (Exception e) {
             logger.severe("Error getting flights: " + e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -101,9 +87,39 @@ public class FlightController {
         }
     }
 
+    @GET
+    @Path("/{id}")
+    public Response getFlight(@PathParam("id") int id) {
+        try {
+            var flight = this.repository.selectWhereId(id);
+            if (flight.isEmpty())
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(Map.of("message", String.format("Flight %d does not or no longer exists", id)))
+                        .build();
+            return Response.ok(flight).build();
+        } catch (Exception e) {
+            logger.severe("Error getting flights: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of("error", "Failed to retrieve flights"))
+                    .build();
+        }
+    }
 
-    @POST
-    public Response createFlight(Flight flight) {
-        return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+    @GET
+    @Path("/{id}/details")
+    public Response getFlightDetails(@PathParam("id") int id) {
+        try {
+            var flightOpt = this.repository.selectWhereId(id);
+            if (flightOpt.isEmpty()) return NotFound(String.format("Flight %d does not or no longer exists", id));
+            var flight = flightOpt.get();
+            if (flight.getAirCraft() == null)
+                return NotFound(String.format("No aircraft assigned to flight number %d", id));
+            var seats = this.seatsRepository.selectFlightSeats(flight.getId());
+            flight.getAirCraft().setSeats(seats);
+            return Response.ok(flight).build();
+        } catch (Exception e) {
+            logger.severe("Error getting flights: " + e.getMessage());
+            return InternalServerError(e.getMessage());
+        }
     }
 }

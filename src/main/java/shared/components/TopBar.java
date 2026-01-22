@@ -40,6 +40,7 @@ public class TopBar extends FlexPanelH {
     }
 
     private void onLogout(ActionEvent e) {
+        this.router.getContext().logout();
         this.router.navigateTo(LoginView.class);
     }
 

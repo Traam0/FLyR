@@ -5,6 +5,8 @@ public interface Command {
 
     boolean canExecute(Object prams);
 
+    public void canExecuteChanged();
+
     void subscribeChangeListener(CanExecuteChangedListener listener);
 
     void unsubscribeChangeListener(CanExecuteChangedListener listener);

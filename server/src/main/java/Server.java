@@ -1,3 +1,4 @@
+import controllers.AuthController;
 import controllers.FlightController;
 import core.abstractions.JaxRsServer;
 import core.dependencyInjection.ServiceCollection;
@@ -6,6 +7,8 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.wadl.internal.WadlResource;
 import repositories.FlightsRepository;
+import repositories.SeatsRepository;
+import repositories.UserRepository;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,14 +31,18 @@ public class Server extends JaxRsServer {
     @Override
     protected void registerServices(ServiceCollection services) {
         //controllers
+        services.registerSingleton(AuthController.class, AuthController.class);
         services.registerSingleton(FlightController.class, FlightController.class);
         //repositories
+        services.registerScoped(UserRepository.class, UserRepository.class);
         services.registerScoped(FlightsRepository.class, FlightsRepository.class);
+        services.registerScoped(SeatsRepository.class, SeatsRepository.class);
     }
 
     @Override
     protected void startApplication() throws IOException {
         final ResourceConfig config = new ResourceConfig()
+                .register(getServiceProvider().getRequiredService(AuthController.class))
                 .register(getServiceProvider().getRequiredService(FlightController.class))
                 .register(WadlResource.class);
 
