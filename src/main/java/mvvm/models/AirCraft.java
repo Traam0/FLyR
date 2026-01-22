@@ -1,6 +1,9 @@
 package mvvm.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
 
 public final class AirCraft {
     @JsonProperty("id")
@@ -15,6 +18,8 @@ public final class AirCraft {
     int economyCapacity;
     @JsonProperty("businessCapacity")
     int businessCapacity;
+    @JsonProperty("seats")
+    private List<Seat> seats;
 
     public AirCraft() {
     }
@@ -70,5 +75,13 @@ public final class AirCraft {
 
     public void setBusinessCapacity(int businessCapacity) {
         this.businessCapacity = businessCapacity;
+    }
+
+    public List<Seat> getSeats() {
+        return seats;
+    }
+
+    public void setSeats(List<Seat> seats) {
+        this.seats = seats;
     }
 }
