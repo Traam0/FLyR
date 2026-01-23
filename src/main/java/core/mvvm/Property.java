@@ -25,7 +25,7 @@ public class Property<T> {
     }
 
     public void set(T value) {
-        if (this.flags.contains(PropertyFlags.READ_ONLY))
+        if (this.flags.contains(PropertyFlags.READ_ONLY) && this.value != null)
             throw new IllegalArgumentException("Cannot set read-only property");
 
         if (this.flags.contains(PropertyFlags.DISTINCT_VALUE) && this.value == value) return;

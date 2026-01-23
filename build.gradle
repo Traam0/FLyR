@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+
 }
 
 group = 'org.isla'
@@ -7,6 +8,8 @@ version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven { url "https://repo.eclipse.org/content/repositories/jakarta/" }
+
 }
 
 dependencies {
@@ -18,8 +21,49 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'org.glassfish.jersey.media:jersey-media-json-jackson:3.1.5'
 
+    implementation "com.sun.xml.ws:jaxws-rt:4.0.2"
+    implementation 'jakarta.xml.ws:jakarta.xml.ws-api:2.3.3'
+    implementation 'org.apache.cxf:cxf-rt-frontend-jaxws:3.5.0'
+    implementation 'org.apache.cxf:cxf-rt-transports-http:3.5.0'
+}
+
+task generateWsdlClient(type: Exec) {
+    def wsdlUrl = 'http://localhost:8081/booking?wsdl'
+    def outputDir = 'build/generated-sources/jaxws'
+    def packageName = 'contracts.soap'
+
+    file(outputDir).mkdirs()
+
+    commandLine(
+            'cmd', '/c',
+            'C:\\utils\\apache-cxf-4.1.4\\bin\\wsdl2java.bat',
+            '-d', outputDir,
+            '-p', packageName,
+            wsdlUrl
+    )
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'build/generated-sources/jaxws'
+        }
+    }
 }
 
 test {
     useJUnitPlatform()
 }
+
+sourceSets {
+    main {
+        java {
+            srcDir 'build/generated-sources/jaxws'  // Include generated classes in the build
+        }
+    }
+}
+test {
+    useJUnitPlatform()
+}
+
+compileJava.dependsOn generateWsdlClient

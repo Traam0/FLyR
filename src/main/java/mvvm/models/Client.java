@@ -10,12 +10,13 @@ public final class Client {
     private String phone;
     private String passportNumber;
     private LocalDate birthDate;
+    private int userId;
 
     public Client() {
     }
 
     public Client(int id, String firstName, String lastName, String email,
-                  String phone, String passportNumber, LocalDate birthDate) {
+                  String phone, String passportNumber, LocalDate birthDate, int userId) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -23,6 +24,7 @@ public final class Client {
         this.phone = phone;
         this.passportNumber = passportNumber;
         this.birthDate = birthDate;
+        this.userId = userId;
     }
 
     public int getId() {
@@ -75,5 +77,13 @@ public final class Client {
 
     public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 }

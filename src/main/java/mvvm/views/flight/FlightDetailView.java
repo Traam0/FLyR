@@ -1,7 +1,7 @@
 package mvvm.views.flight;
 
+import contracts.wrappers.Resource;
 import core.abstraction.ProtectedView;
-import core.abstraction.ViewBase;
 import mvvm.models.SeatClass;
 import mvvm.models.SeatStatus;
 import mvvm.viewModels.FlightDetailViewModel;
@@ -43,6 +43,7 @@ public class FlightDetailView extends ProtectedView {
         this.bind();
 
         this.vm.loadData();
+        this.vm.loadClient();
 
     }
 
@@ -102,6 +103,20 @@ public class FlightDetailView extends ProtectedView {
             this.createSeatButtons();
             this.lSelectedSeats.setText(String.valueOf(n.size()));
             this.ltotalPrice.setText(String.format("DH %d", n.stream().mapToInt(seat -> seat.getSeatClass() == SeatClass.BUSINESS ? 500 : 300).reduce(0, Integer::sum)));
+        });
+
+        this.vm.client.subscribe((o, n) -> {
+            if (n.getStatus() == Resource.Status.SUCCESS) {
+                var data = n.getData();
+                this.iFirstName.setText(data.getFirstName());
+                this.iLastName.setText(data.getLastName());
+                this.iEmail.setText(data.getEmail());
+                this.iPhone.setText(data.getPhone());
+                this.iPassport.setText(data.getPassportNumber());
+
+//                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+//                this.iBirthDate.setText(dateFormatter.format(data.getBirthDate()));
+            }
         });
     }
 
@@ -279,6 +294,9 @@ public class FlightDetailView extends ProtectedView {
         var clearButton = new Button("Clear", MaterialColors.RED_50, MaterialColors.RED_700_ACCENT, 30, 20);
         pButtons.add(clearButton);
         var saveButton = new Button("Book now", MaterialColors.GREEN_600, MaterialColors.WHITE, 30, 20);
+        saveButton.addActionListener(e -> {
+            this.vm.getBookCommand().execute(null);
+        });
         pButtons.add(saveButton);
         panel.add(pButtons);
         return panel;

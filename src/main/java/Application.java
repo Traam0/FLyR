@@ -10,7 +10,9 @@ import mvvm.viewModels.LoginViewModel;
 import mvvm.views.LoginView;
 import mvvm.views.flight.FlightDetailView;
 import mvvm.views.flight.FlightSearchView;
+import mvvm.views.reservations.ReservationsView;
 import services.AuthenticationService;
+import services.ClientService;
 import services.FlightsService;
 
 import javax.swing.*;
@@ -29,11 +31,11 @@ public class Application extends SwingApp {
         //better ur singleton Factory data.why = [Thread Safe, lightWeigh] data.whenScoped = [different request tokens]
         services.registerSingleton(HttpRestClientFactory.class,
                 (Function<ServiceProvider, HttpRestClientFactory>) sp -> new HttpRestClientFactory("http://localhost:8085/"));
-        services.registerScoped(AuthService.class, AuthenticationService.class);
 
         //services
+        services.registerScoped(AuthService.class, AuthenticationService.class);
         services.registerScoped(FlightsService.class, FlightsService.class);
-
+        services.registerScoped(ClientService.class, ClientService.class);
         //ViewModels
         services.registerScoped(LoginViewModel.class, LoginViewModel.class);
         services.registerScoped(FlightSearchViewModel.class, FlightSearchViewModel.class);
@@ -43,6 +45,7 @@ public class Application extends SwingApp {
         services.registerTransient(LoginView.class, LoginView.class);
         services.registerTransient(FlightSearchView.class, FlightSearchView.class);
         services.registerTransient(FlightDetailView.class, FlightDetailView.class);
+        services.registerTransient(ReservationsView.class, ReservationsView.class);
 
     }
 

@@ -3,6 +3,7 @@ package shared.components;
 import core.navigation.Router;
 import mvvm.views.LoginView;
 import mvvm.views.flight.FlightSearchView;
+import mvvm.views.reservations.ReservationsView;
 import shared.common.MaterialColors;
 import shared.layouts.FlexPanelH;
 import shared.layouts.FlexPanelV;
@@ -46,6 +47,7 @@ public class TopBar extends FlexPanelH {
 
     private void onReservationBtnClick(ActionEvent e) {
         this.logger.info("Reservation Button clicked");
+        this.router.navigateTo(ReservationsView.class);
         //TODO
     }
 
