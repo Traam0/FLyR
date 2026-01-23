@@ -1,0 +1,7 @@
+## Utilisation côté métier
+
+À appeler après une opération critique (SOAP / RMI) :
+
+SocketNotificationService.notifyReservationConfirmed(flightId, seatId);
+SocketNotificationService.notifyReservationConflict(flightId, seatId);
+SocketNotificationService.notifySeatReleased(flightId, seatId);
